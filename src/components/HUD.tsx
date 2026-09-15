@@ -506,10 +506,11 @@ export const HUD: React.FC<HUDProps> = ({
         <div className="pointer-events-auto flex items-end gap-1.5 sm:gap-2.5">
           {/* FISHING ROD / MANCING BUTTON */}
           <button
-            onClick={() => {
+            onPointerDown={(e) => {
+              e.stopPropagation();
               if (onFishingAction) onFishingAction();
             }}
-            className="w-12 h-12 sm:w-13 sm:h-13 bg-gradient-to-br from-teal-800 to-cyan-900 hover:from-teal-700 hover:to-cyan-800 active:scale-90 border-2 border-cyan-400 text-white rounded-full flex flex-col items-center justify-center shadow-lg transition-transform text-[9px] font-bold"
+            className="w-12 h-12 sm:w-13 sm:h-13 bg-gradient-to-br from-teal-800 to-cyan-900 hover:from-teal-700 hover:to-cyan-800 active:scale-90 border-2 border-cyan-400 text-white rounded-full flex flex-col items-center justify-center shadow-lg transition-transform text-[9px] font-bold touch-none select-none"
             title="Pakai Pancingan / Fish [G]"
           >
             <span className="text-sm">🎣</span>
@@ -518,8 +519,11 @@ export const HUD: React.FC<HUDProps> = ({
 
           {/* INTERACT BUTTON */}
           <button
-            onClick={() => onInteract()}
-            className="w-13 h-13 sm:w-14 sm:h-14 bg-emerald-800 hover:bg-emerald-700 active:scale-90 border-2 border-emerald-400 text-white rounded-full flex flex-col items-center justify-center shadow-lg transition-transform text-[10px] font-bold"
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              onInteract();
+            }}
+            className="w-13 h-13 sm:w-14 sm:h-14 bg-emerald-800 hover:bg-emerald-700 active:scale-90 border-2 border-emerald-400 text-white rounded-full flex flex-col items-center justify-center shadow-lg transition-transform text-[10px] font-bold touch-none select-none"
             title="Interact [E]"
           >
             <Sparkles size={16} className="text-emerald-200 mb-0.5" />
@@ -528,13 +532,16 @@ export const HUD: React.FC<HUDProps> = ({
 
           {/* DODGE BUTTON */}
           <button
-            onClick={() => onDodge()}
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              if (dodgeCooldown <= 0) onDodge();
+            }}
             disabled={dodgeCooldown > 0}
             className={`w-13 h-13 sm:w-14 sm:h-14 ${
               dodgeCooldown > 0
                 ? 'bg-slate-800 border-slate-600 opacity-60'
                 : 'bg-indigo-700 hover:bg-indigo-600 active:scale-90 border-indigo-400'
-            } border-2 text-white rounded-full flex flex-col items-center justify-center shadow-lg transition-transform text-[10px] font-bold relative overflow-hidden`}
+            } border-2 text-white rounded-full flex flex-col items-center justify-center shadow-lg transition-transform text-[10px] font-bold relative overflow-hidden touch-none select-none`}
             title="Dodge Roll [L]"
           >
             <span className="text-sm">💨</span>
@@ -548,13 +555,16 @@ export const HUD: React.FC<HUDProps> = ({
 
           {/* SKILL: CYCLONE BUTTON */}
           <button
-            onClick={() => onSkill()}
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              if (skillCooldown <= 0) onSkill();
+            }}
             disabled={skillCooldown > 0}
             className={`w-14 h-14 sm:w-16 sm:h-16 ${
               skillCooldown > 0
                 ? 'bg-slate-800 border-slate-600 opacity-60'
                 : 'bg-sky-600 hover:bg-sky-500 active:scale-90 border-sky-300'
-            } border-2 text-white rounded-full flex flex-col items-center justify-center shadow-lg transition-transform text-[10px] font-bold relative overflow-hidden`}
+            } border-2 text-white rounded-full flex flex-col items-center justify-center shadow-lg transition-transform text-[10px] font-bold relative overflow-hidden touch-none select-none`}
             title="Sky Slash [K]"
           >
             <span className="text-base">🌪️</span>
@@ -568,13 +578,16 @@ export const HUD: React.FC<HUDProps> = ({
 
           {/* ULTIMATE: HEAVENLY JUDGMENT */}
           <button
-            onClick={() => onUltimate()}
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              if (ultCooldown <= 0 && stats.energy >= 80) onUltimate();
+            }}
             disabled={ultCooldown > 0 || stats.energy < 80}
             className={`w-14 h-14 sm:w-16 sm:h-16 ${
               ultCooldown > 0 || stats.energy < 80
                 ? 'bg-slate-800 border-slate-700 opacity-50'
                 : 'bg-amber-600 hover:bg-amber-500 active:scale-90 border-amber-300 ring-2 ring-amber-400/50 animate-pulse'
-            } border-2 text-white rounded-full flex flex-col items-center justify-center shadow-2xl transition-transform text-[9px] font-bold relative overflow-hidden`}
+            } border-2 text-white rounded-full flex flex-col items-center justify-center shadow-2xl transition-transform text-[9px] font-bold relative overflow-hidden touch-none select-none`}
             title="Heavenly Judgment [U]"
           >
             <span className="text-base">⚡</span>
@@ -588,8 +601,11 @@ export const HUD: React.FC<HUDProps> = ({
 
           {/* BASIC ATTACK COMBO (BIGGEST BUTTON) */}
           <button
-            onClick={() => onAttack()}
-            className="w-18 h-18 sm:w-20 sm:h-20 bg-gradient-to-br from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 active:scale-90 border-3 border-amber-400 text-white rounded-full flex flex-col items-center justify-center shadow-2xl transition-transform text-xs font-bold ml-1"
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              onAttack();
+            }}
+            className="w-18 h-18 sm:w-20 sm:h-20 bg-gradient-to-br from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 active:scale-90 border-3 border-amber-400 text-white rounded-full flex flex-col items-center justify-center shadow-2xl transition-transform text-xs font-bold ml-1 touch-none select-none"
             title="Attack Combo [J]"
           >
             <span className="text-2xl mb-0.5">⚔️</span>
