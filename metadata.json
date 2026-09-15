@@ -1,0 +1,6 @@
+{
+  "name": "Tales of the Skyfall",
+  "description": "A 2D Pixel-Art Action RPG dungeon-crawler adventure featuring real-time combat, puzzles, boss battles, and character progression.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

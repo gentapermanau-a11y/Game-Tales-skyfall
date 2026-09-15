@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    background-color: #0b0e14;
+    color: #e2e8f0;
+    overflow: hidden;
+  }
+}
+
+.font-pixel {
+  font-family: 'Silkscreen', 'Press Start 2P', monospace;
+}
+
+.font-title {
+  font-family: 'Cinzel', 'MedievalSharp', serif;
+}
+
+/* Crisp pixel rendering */
+canvas {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+/* Pixel art border style helpers */
+.pixel-box {
+  border: 3px solid #1e293b;
+  box-shadow: 
+    inset -3px -3px 0px 0px #0f172a,
+    inset 3px 3px 0px 0px #334155;
+}
+
+.pixel-box-gold {
+  border: 3px solid #78350f;
+  box-shadow: 
+    inset -3px -3px 0px 0px #451a03,
+    inset 3px 3px 0px 0px #d97706;
+}
+
+.pixel-btn {
+  transition: transform 0.05s ease, filter 0.1s ease;
+}
+
+.pixel-btn:active {
+  transform: translateY(2px);
+}
