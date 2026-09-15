@@ -59,104 +59,143 @@ export class PixelRenderer {
       return;
     }
 
-    // --- CAPE ---
-    ctx.fillStyle = '#1d4ed8'; // Azure royal cape
+    // --- DEMONIC & CELESTIAL WINGS WITH CRIMSON ENERGY TENDRILS ---
+    ctx.save();
+    const wingFlutter = Math.sin(frame * 0.2) * 4;
+    
+    // Left Wing (Black feathered with crimson energy arc)
+    ctx.fillStyle = '#090d16';
     ctx.beginPath();
-    const capeFlutter = Math.sin(frame * 0.25) * 3;
-    ctx.moveTo(-7, -4 + bob);
-    ctx.lineTo(7, -4 + bob);
-    ctx.lineTo(8 + capeFlutter, 14 + bob);
-    ctx.lineTo(-8 + capeFlutter, 14 + bob);
+    ctx.moveTo(-6, -2 + bob);
+    ctx.bezierCurveTo(-22, -10 + wingFlutter, -32, 2 + wingFlutter, -28, 14 + wingFlutter);
+    ctx.bezierCurveTo(-20, 10, -12, 6, -6, 4 + bob);
+    ctx.closePath();
+    ctx.fill();
+    // Crimson energy arc on left wing
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-28, -6 + wingFlutter);
+    ctx.bezierCurveTo(-34, -2, -26, 8, -20, 12);
+    ctx.stroke();
+
+    // Right Wing (Black feathered with crimson energy arc)
+    ctx.fillStyle = '#090d16';
+    ctx.beginPath();
+    ctx.moveTo(6, -2 + bob);
+    ctx.bezierCurveTo(22, -10 - wingFlutter, 32, 2 - wingFlutter, 28, 14 - wingFlutter);
+    ctx.bezierCurveTo(20, 10, 12, 6, 6, 4 + bob);
+    ctx.closePath();
+    ctx.fill();
+    // Crimson energy arc on right wing
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(28, -6 - wingFlutter);
+    ctx.bezierCurveTo(34, -2, 26, 8, 20, 12);
+    ctx.stroke();
+    ctx.restore();
+
+    // --- ROBE / COAT (White Outer Coat with Black Inner Tunic & Fur Trim) ---
+    ctx.fillStyle = '#f8fafc'; // White outer coat
+    ctx.beginPath();
+    const coatFlutter = Math.sin(frame * 0.25) * 3;
+    ctx.moveTo(-8, -5 + bob);
+    ctx.lineTo(8, -5 + bob);
+    ctx.lineTo(11 + coatFlutter, 16 + bob);
+    ctx.lineTo(-11 + coatFlutter, 16 + bob);
     ctx.closePath();
     ctx.fill();
 
-    // --- LEGS / BOOTS ---
-    ctx.fillStyle = '#334155'; // Dark iron boots
+    // Inner Black Robe / Tunic
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(-6, -4 + bob, 12, 14);
+    ctx.fillStyle = '#ffffff'; // White kimono lapel cross
+    ctx.beginPath();
+    ctx.moveTo(-6, -4 + bob);
+    ctx.lineTo(0, 5 + bob);
+    ctx.lineTo(6, -4 + bob);
+    ctx.closePath();
+    ctx.fill();
+
+    // Fur/Feather Trim on Collar & Waist Sash
+    ctx.fillStyle = '#e2e8f0';
+    ctx.fillRect(-9, -5 + bob, 18, 3); // Collar
+    ctx.fillRect(-7, 6 + bob, 14, 3);  // Waist belt / sash
+
+    // --- LEGS & HIGH BOOTS (Dark armored boots) ---
     const legOffset = action === 'walk' ? Math.sin(frame * 0.3) * 4 : 0;
-    // Left leg
+    ctx.fillStyle = '#0f172a';
     ctx.fillRect(-6, 8 + bob - legOffset, 4, 9 + legOffset);
-    // Right leg
     ctx.fillRect(2, 8 + bob + legOffset, 4, 9 - legOffset);
 
-    // Boot cuffs
-    ctx.fillStyle = '#64748b';
-    ctx.fillRect(-7, 13 + bob - legOffset, 6, 4);
-    ctx.fillRect(1, 13 + bob + legOffset, 6, 4);
+    // Boots
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(-7, 13 + bob - legOffset, 5, 5);
+    ctx.fillRect(2, 13 + bob + legOffset, 5, 5);
 
-    // --- TORSO / ARMOR ---
-    ctx.fillStyle = '#0f172a'; // Under-tunic
-    ctx.fillRect(-7, -4 + bob, 14, 13);
+    // --- HEAD & WHITE SPIKY HAIR ---
+    // Skin head base
+    ctx.fillStyle = '#fde68a';
+    ctx.fillRect(-5, -14 + bob, 10, 10);
 
-    // Breastplate (Silver Knight steel)
-    ctx.fillStyle = '#94a3b8';
-    ctx.fillRect(-6, -3 + bob, 12, 10);
-    // Golden crest insignia
-    ctx.fillStyle = '#f59e0b';
-    ctx.fillRect(-2, -1 + bob, 4, 5);
-    ctx.fillRect(-4, 1 + bob, 8, 2);
-
-    // Pauldrons (Shoulder guards)
-    ctx.fillStyle = '#cbd5e1';
-    ctx.fillRect(-9, -5 + bob, 4, 5);
-    ctx.fillRect(5, -5 + bob, 4, 5);
-
-    // --- HEAD & HELMET ---
-    // Visor shadow
-    ctx.fillStyle = '#090d16';
-    ctx.fillRect(-6, -16 + bob, 12, 12);
-
-    // Steel helm
-    ctx.fillStyle = '#94a3b8';
-    ctx.fillRect(-6, -17 + bob, 12, 6);
-    ctx.fillRect(-7, -15 + bob, 3, 7);
-    ctx.fillRect(4, -15 + bob, 3, 7);
-
-    // Helmet slit / Eyes
-    ctx.fillStyle = '#38bdf8'; // Glowing azure eyes
+    // Glowing Azure / Ice-Blue Eyes (Intense gaze)
+    ctx.fillStyle = '#38bdf8';
     if (facing === 'down') {
-      ctx.fillRect(-3, -11 + bob, 2, 2);
-      ctx.fillRect(1, -11 + bob, 2, 2);
+      ctx.fillRect(-3, -10 + bob, 2, 2);
+      ctx.fillRect(1, -10 + bob, 2, 2);
     } else if (facing === 'right') {
-      ctx.fillRect(2, -11 + bob, 3, 2);
+      ctx.fillRect(2, -10 + bob, 2, 2);
+    } else if (facing === 'left') {
+      ctx.fillRect(-4, -10 + bob, 2, 2);
     } else if (facing === 'up') {
-      // Back of helm
-      ctx.fillStyle = '#64748b';
-      ctx.fillRect(-4, -13 + bob, 8, 6);
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(-5, -15 + bob, 10, 10);
     }
 
-    // Helmet plume (Azure feather)
-    ctx.fillStyle = '#0284c7';
-    ctx.fillRect(-2, -21 + bob, 4, 5);
-    ctx.fillStyle = '#38bdf8';
-    ctx.fillRect(-1, -22 + bob, 2, 3);
+    // Pure White Spiky Hair
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(-6, -18 + bob, 12, 6);
+    ctx.fillRect(-7, -15 + bob, 3, 6);
+    ctx.fillRect(4, -15 + bob, 3, 6);
+    // Spiky tufts
+    ctx.fillRect(-5, -20 + bob, 3, 3);
+    ctx.fillRect(-1, -20 + bob, 3, 3);
+    ctx.fillRect(3, -19 + bob, 3, 3);
 
-    // --- WEAPON & SWORD SWING ---
+    // --- DARK ORNATE GREATSWORD WITH CRIMSON RUNES ---
     if (action === 'attack') {
       const swingProgress = (frame % 10) / 10;
       const angle = -Math.PI / 4 + swingProgress * Math.PI;
 
       ctx.save();
-      ctx.translate(6, 2 + bob);
+      ctx.translate(7, 2 + bob);
       ctx.rotate(angle);
 
-      // Sword Hilt
-      ctx.fillStyle = '#b45309';
-      ctx.fillRect(-2, 0, 4, 5);
+      // Dark Hilt
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(-2, 0, 4, 6);
+      ctx.fillStyle = '#ef4444'; // Crimson gem on pommel
+      ctx.fillRect(-1, 4, 2, 2);
+
       // Crossguard
-      ctx.fillStyle = '#f59e0b';
-      ctx.fillRect(-5, -2, 10, 3);
-      // Blade
-      ctx.fillStyle = '#e2e8f0';
-      ctx.fillRect(-2, -22, 4, 20);
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(-1, -21, 2, 18);
+      ctx.fillStyle = '#334155';
+      ctx.fillRect(-6, -2, 12, 3);
+
+      // Black Blade with Crimson Edge
+      ctx.fillStyle = '#090d16';
+      ctx.fillRect(-2, -26, 4, 25);
+      ctx.fillStyle = '#ef4444'; // Glowing crimson bloodline
+      ctx.fillRect(-0.5, -25, 1, 23);
       ctx.restore();
     } else {
-      // Idle sword sheathed at hip
-      ctx.fillStyle = '#b45309';
-      ctx.fillRect(6, 0 + bob, 3, 5);
-      ctx.fillStyle = '#64748b';
-      ctx.fillRect(5, 5 + bob, 4, 11);
+      // Idle dark sword sheathed / held at side
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(7, 0 + bob, 3, 5);
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(6, 5 + bob, 4, 12);
+      ctx.fillStyle = '#ef4444';
+      ctx.fillRect(7, 8 + bob, 2, 8);
     }
 
     ctx.restore();

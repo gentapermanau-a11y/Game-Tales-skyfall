@@ -24,6 +24,7 @@ import {
   NPCEntity,
   FishingEngineState,
   FishCatchRecord,
+  FishingRodId,
 } from './types';
 import { ActiveFishBuff } from './game/engine';
 
@@ -65,6 +66,7 @@ export default function App() {
   const [fishingState, setFishingState] = useState<FishingEngineState | null>(null);
   const [fishCollection, setFishCollection] = useState<Record<string, FishCatchRecord>>({});
   const [activeFishBuffs, setActiveFishBuffs] = useState<ActiveFishBuff[]>([]);
+  const [equippedRod, setEquippedRod] = useState<FishingRodId>('rod_wooden');
 
   // Game Engine State Sync
   const [stats, setStats] = useState<PlayerStats>({
@@ -218,6 +220,9 @@ export default function App() {
       onFishBuffsUpdate: (buffs) => {
         setActiveFishBuffs([...buffs]);
       },
+      onEquippedRodUpdate: (rodId) => {
+        setEquippedRod(rodId);
+      },
     });
 
     engineRef.current = engine;
@@ -231,6 +236,9 @@ export default function App() {
     engine.init(canvas, saved || undefined);
     if (engine.fishCollection) {
       setFishCollection({ ...engine.fishCollection });
+    }
+    if (engine.equippedRod) {
+      setEquippedRod(engine.equippedRod);
     }
 
     return () => {
@@ -395,6 +403,10 @@ export default function App() {
         if (key === 'e' || key === 'f') {
           engineRef.current.playerInteract();
         }
+        // Fishing Rod Action (G)
+        if (key === 'g') {
+          engineRef.current.triggerFishingRodAction();
+        }
       }
     };
 
@@ -528,6 +540,14 @@ export default function App() {
           onContinue={() => {
             setInGame(true);
           }}
+          onUpdateName={(newName) => {
+            setStats(prev => ({ ...prev, name: newName }));
+            const saved = storageService.loadGame();
+            if (saved) {
+              saved.playerStats.name = newName;
+              storageService.saveGame(saved);
+            }
+          }}
         />
       ) : (
         <div className="relative w-full h-full flex items-center justify-center bg-black">
@@ -566,6 +586,8 @@ export default function App() {
             onOpenControls={() => setActiveModal('controls')}
             onOpenFishAlmanac={() => setActiveModal('almanac')}
             activeFishBuffs={activeFishBuffs}
+            equippedRod={equippedRod}
+            onFishingAction={() => engineRef.current?.triggerFishingRodAction()}
             onQuickSlot={(slot) => engineRef.current?.useQuickSlot(slot)}
             skillCooldown={skillCd}
             ultCooldown={ultCd}
@@ -600,6 +622,7 @@ export default function App() {
               inventory={inventory}
               equipment={equipment}
               gold={stats.gold}
+              equippedRod={equippedRod}
               onClose={() => setActiveModal(null)}
               onEquip={(item) => {
                 engineRef.current?.equipItem(item);
@@ -610,6 +633,12 @@ export default function App() {
               }}
               onUseConsumable={(item) => {
                 engineRef.current?.useItem(item);
+              }}
+              onEquipRod={(rodId) => {
+                engineRef.current?.setEquippedRod(rodId);
+              }}
+              onEatFish={(fishItem) => {
+                engineRef.current?.consumeFish(fishItem);
               }}
             />
           )}
@@ -625,6 +654,12 @@ export default function App() {
               stats={stats}
               equipment={equipment}
               onClose={() => setActiveModal(null)}
+              onUpdateName={(newName) => {
+                setStats(prev => ({ ...prev, name: newName }));
+                if (engineRef.current) {
+                  engineRef.current.stats.name = newName;
+                }
+              }}
             />
           )}
 
@@ -762,6 +797,7 @@ export default function App() {
               onSelectBait={(baitId) => engineRef.current?.setEquippedBait(baitId)}
               onSelectRod={(rodId) => engineRef.current?.setEquippedRod(rodId)}
               availableBaits={engineRef.current ? engineRef.current.getAvailableBaits() : []}
+              availableRods={engineRef.current ? engineRef.current.getAvailableRods() : ['rod_wooden']}
             />
           )}
 

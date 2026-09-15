@@ -7,9 +7,12 @@ interface CharacterModalProps {
   stats: PlayerStats;
   equipment: EquipmentState;
   onClose: () => void;
+  onUpdateName?: (name: string) => void;
 }
 
-export const CharacterModal: React.FC<CharacterModalProps> = ({ stats, equipment, onClose }) => {
+export const CharacterModal: React.FC<CharacterModalProps> = ({ stats, equipment, onClose, onUpdateName }) => {
+  const [isEditingName, setIsEditingName] = React.useState(false);
+  const [nameInput, setNameInput] = React.useState(stats.name || 'Aeron');
   const expPercent = Math.max(0, Math.min(100, (stats.exp / stats.expToNext) * 100));
 
   // Format playtime
@@ -51,8 +54,42 @@ export const CharacterModal: React.FC<CharacterModalProps> = ({ stats, equipment
             ⚔️
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex justify-between items-baseline">
-              <span className="text-base font-bold text-white tracking-wide">Aeron</span>
+            <div className="flex justify-between items-baseline gap-2">
+              {isEditingName ? (
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="text"
+                    value={nameInput}
+                    onChange={(e) => setNameInput(e.target.value)}
+                    className="bg-slate-900 border border-amber-500 text-white px-2 py-0.5 rounded text-sm font-bold outline-none w-36"
+                    autoFocus
+                    maxLength={20}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        if (nameInput.trim() && onUpdateName) {
+                          onUpdateName(nameInput.trim());
+                        }
+                        setIsEditingName(false);
+                      } else if (e.key === 'Escape') {
+                        setIsEditingName(false);
+                        setNameInput(stats.name || 'Aeron');
+                      }
+                    }}
+                    onBlur={() => {
+                      if (nameInput.trim() && onUpdateName) {
+                        onUpdateName(nameInput.trim());
+                      }
+                      setIsEditingName(false);
+                    }}
+                  />
+                  <span className="text-[9px] text-amber-400">⏎</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 group cursor-pointer" onClick={() => setIsEditingName(true)} title="Click to edit name">
+                  <span className="text-base font-bold text-white tracking-wide hover:text-amber-300 transition-colors">{stats.name || 'Aeron'}</span>
+                  <span className="text-[11px] text-amber-400 opacity-75 group-hover:opacity-100">✏️</span>
+                </div>
+              )}
               <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-amber-950 border border-amber-500/80 text-amber-300">
                 LEVEL {stats.level}
               </span>

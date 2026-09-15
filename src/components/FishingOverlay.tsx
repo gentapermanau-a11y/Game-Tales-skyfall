@@ -27,7 +27,9 @@ export const FishingOverlay: React.FC<FishingOverlayProps> = ({
   onCancel,
   onToggleAutoFishing,
   onSelectBait,
+  onSelectRod,
   availableBaits,
+  availableRods = ['rod_wooden', 'rod_iron', 'rod_reinforced', 'rod_elemental', 'rod_celestial'],
 }) => {
   const currentRod = FISHING_RODS[fishingState.equippedRod] || FISHING_RODS.rod_wooden;
   const currentBait = fishingState.equippedBait ? FISHING_BAITS[fishingState.equippedBait] : null;
@@ -40,7 +42,7 @@ export const FishingOverlay: React.FC<FishingOverlayProps> = ({
       {/* Top Header Card */}
       <div
         id="fishing-header-card"
-        className="absolute top-6 left-1/2 -translate-x-1/2 bg-slate-900/90 border border-amber-500/40 rounded-xl px-5 py-2.5 shadow-2xl flex items-center gap-4 text-white"
+        className="absolute top-6 left-1/2 -translate-x-1/2 bg-slate-900/90 border border-amber-500/40 rounded-xl px-5 py-2.5 shadow-2xl flex flex-wrap items-center justify-center gap-3 text-white max-w-[95vw]"
       >
         <div className="flex items-center gap-2">
           <span className="text-xl">🎣</span>
@@ -48,13 +50,41 @@ export const FishingOverlay: React.FC<FishingOverlayProps> = ({
             <h3 className="text-xs font-bold text-amber-400 uppercase tracking-wider">
               {fishingState.spotName || 'Quiet Waters'}
             </h3>
-            <p className="text-[11px] text-slate-300">
-              Rod: <span className="text-amber-200 font-semibold">{currentRod.name}</span> (Power: {currentRod.power})
+            <p className="text-[10px] text-slate-300">
+              Power: <span className="text-amber-300 font-bold">{currentRod.power}</span> | Control: <span className="text-cyan-300 font-bold">x{currentRod.barSizeMultiplier}</span>
             </p>
           </div>
         </div>
 
-        <div className="h-6 w-px bg-slate-700" />
+        {/* Rod Selector */}
+        {onSelectRod && (
+          <>
+            <div className="h-6 w-px bg-slate-700 hidden sm:block" />
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-slate-400">Pancingan:</span>
+              <select
+                id="fishing-rod-select"
+                value={fishingState.equippedRod}
+                onChange={(e) => {
+                  sound.playButtonClick();
+                  onSelectRod(e.target.value as FishingRodId);
+                }}
+                className="bg-slate-800 text-xs text-amber-300 border border-amber-500/50 rounded px-2 py-1 focus:outline-none focus:border-amber-400 font-bold"
+              >
+                {availableRods.map((rodId) => {
+                  const r = FISHING_RODS[rodId];
+                  return (
+                    <option key={rodId} value={rodId}>
+                      {r ? r.name : rodId}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+          </>
+        )}
+
+        <div className="h-6 w-px bg-slate-700 hidden sm:block" />
 
         {/* Bait Selector */}
         <div className="flex items-center gap-1.5">
@@ -83,14 +113,15 @@ export const FishingOverlay: React.FC<FishingOverlayProps> = ({
             sound.playButtonClick();
             onToggleAutoFishing();
           }}
-          className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-md ${
             fishingState.isAutoFishing
-              ? 'bg-amber-500 text-slate-950 shadow-[0_0_12px_rgba(245,158,11,0.5)] animate-pulse'
+              ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-extrabold shadow-[0_0_16px_rgba(245,158,11,0.6)] ring-2 ring-amber-300'
               : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
           }`}
+          title="Toggle Auto-Fishing (100% Auto Menang)"
         >
-          <Sparkles size={13} className={fishingState.isAutoFishing ? 'text-slate-950 animate-spin' : 'text-amber-400'} />
-          {fishingState.isAutoFishing ? 'Auto-Fishing: ON' : 'Auto-Fishing: OFF'}
+          <Sparkles size={14} className={fishingState.isAutoFishing ? 'text-slate-950 animate-spin' : 'text-amber-400'} />
+          <span>{fishingState.isAutoFishing ? '⚡ AUTO-MANCING: AKTIF (AUTO MENANG)' : '⚡ AUTO-MANCING: OFF'}</span>
         </button>
 
         {/* Close Button */}
@@ -269,19 +300,28 @@ export const FishingOverlay: React.FC<FishingOverlayProps> = ({
 
             {/* Reeling Controls */}
             <div className="w-full flex flex-col gap-2">
-              <button
-                id="btn-hold-reel"
-                onMouseDown={onReelStart}
-                onMouseUp={onReelEnd}
-                onTouchStart={onReelStart}
-                onTouchEnd={onReelEnd}
-                className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:from-emerald-700 active:to-teal-700 text-white font-black rounded-xl shadow-lg active:scale-95 transition-all text-sm flex items-center justify-center gap-2"
-              >
-                <RotateCcw size={16} />
-                HOLD TO REEL [SPACE / HOLD]
-              </button>
+              {fishingState.isAutoFishing ? (
+                <div className="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black rounded-xl shadow-[0_0_15px_rgba(245,158,11,0.5)] text-sm flex items-center justify-center gap-2 animate-pulse">
+                  <Sparkles size={16} className="animate-spin" />
+                  <span>⚡ AUTO-WINNING (100% PASTI MENANG)...</span>
+                </div>
+              ) : (
+                <button
+                  id="btn-hold-reel"
+                  onMouseDown={onReelStart}
+                  onMouseUp={onReelEnd}
+                  onTouchStart={onReelStart}
+                  onTouchEnd={onReelEnd}
+                  className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:from-emerald-700 active:to-teal-700 text-white font-black rounded-xl shadow-lg active:scale-95 transition-all text-sm flex items-center justify-center gap-2"
+                >
+                  <RotateCcw size={16} />
+                  HOLD TO REEL [SPACE / HOLD]
+                </button>
+              )}
               <p className="text-[10px] text-slate-400 text-center">
-                Keep the green bar over the fish to fill the catch meter!
+                {fishingState.isAutoFishing
+                  ? 'Auto-fishing aktif: Sistem otomatis mengunci ikan & memenangkan tangkapan!'
+                  : 'Keep the green bar over the fish to fill the catch meter!'}
               </p>
             </div>
           </div>

@@ -8,14 +8,18 @@ interface MenuProfileModalProps {
   stats: PlayerStats;
   equipment: EquipmentState;
   onClose: () => void;
+  onUpdateName?: (name: string) => void;
 }
 
 export const MenuProfileModal: React.FC<MenuProfileModalProps> = ({
   stats,
   equipment,
   onClose,
+  onUpdateName,
 }) => {
   const spriteCanvasRef = useRef<HTMLCanvasElement>(null);
+  const [isEditingName, setIsEditingName] = React.useState(false);
+  const [nameInput, setNameInput] = React.useState(stats.name || 'Aeron');
 
   // Close on ESC
   useEffect(() => {
@@ -102,8 +106,42 @@ export const MenuProfileModal: React.FC<MenuProfileModalProps> = ({
           </div>
 
           <div className="flex-1 w-full min-w-0 flex flex-col gap-2">
-            <div className="flex justify-between items-baseline">
-              <span className="text-lg font-bold text-white tracking-wide">{stats.name || 'Aeron'}</span>
+            <div className="flex justify-between items-baseline gap-2">
+              {isEditingName ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={nameInput}
+                    onChange={(e) => setNameInput(e.target.value)}
+                    className="bg-slate-900 border border-amber-500 text-white px-2 py-0.5 rounded text-base font-bold outline-none w-44"
+                    autoFocus
+                    maxLength={20}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        if (nameInput.trim() && onUpdateName) {
+                          onUpdateName(nameInput.trim());
+                        }
+                        setIsEditingName(false);
+                      } else if (e.key === 'Escape') {
+                        setIsEditingName(false);
+                        setNameInput(stats.name || 'Aeron');
+                      }
+                    }}
+                    onBlur={() => {
+                      if (nameInput.trim() && onUpdateName) {
+                        onUpdateName(nameInput.trim());
+                      }
+                      setIsEditingName(false);
+                    }}
+                  />
+                  <span className="text-[10px] text-amber-400">⏎ Enter</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 group cursor-pointer" onClick={() => setIsEditingName(true)} title="Click to edit character name">
+                  <span className="text-lg font-bold text-white tracking-wide hover:text-amber-300 transition-colors">{stats.name || 'Aeron'}</span>
+                  <span className="text-xs text-amber-400 opacity-75 group-hover:opacity-100 flex items-center gap-1 font-mono">✏️ Edit</span>
+                </div>
+              )}
               <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-amber-950 border border-amber-500 text-amber-300">
                 LEVEL {stats.level}
               </span>

@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { PlayerStats, EnemyEntity, AreaId, InteractionPrompt } from '../types';
+import { PlayerStats, EnemyEntity, AreaId, InteractionPrompt, FishingRodId } from '../types';
 import { ActiveFishBuff } from '../game/engine';
 import {
   Shield,
@@ -16,6 +16,7 @@ import {
   HelpCircle,
   Pause,
   BookOpen,
+  Fish,
 } from 'lucide-react';
 import { sound } from '../services/audio';
 import { KeyboardGuide } from './KeyboardGuide';
@@ -42,6 +43,8 @@ interface HUDProps {
   onOpenControls?: () => void;
   onOpenFishAlmanac?: () => void;
   activeFishBuffs?: ActiveFishBuff[];
+  equippedRod?: FishingRodId;
+  onFishingAction?: () => void;
   onQuickSlot?: (slot: number) => void;
   skillCooldown: number;
   ultCooldown: number;
@@ -73,6 +76,10 @@ export const HUD: React.FC<HUDProps> = ({
   onOpenMap,
   onOpenPause,
   onOpenControls,
+  onOpenFishAlmanac,
+  activeFishBuffs = [],
+  equippedRod = 'rod_wooden',
+  onFishingAction,
   onQuickSlot,
   skillCooldown,
   ultCooldown,
@@ -83,8 +90,6 @@ export const HUD: React.FC<HUDProps> = ({
   showKeyboardGuide = true,
   interactionPrompt,
   portalWarpInfo,
-  onOpenFishAlmanac,
-  activeFishBuffs = [],
 }) => {
   // Virtual Joystick Logic with pointer capture
   const joystickBaseRef = useRef<HTMLDivElement>(null);
@@ -498,7 +503,19 @@ export const HUD: React.FC<HUDProps> = ({
         </div>
 
         {/* ACTION BUTTONS (RIGHT) */}
-        <div className="pointer-events-auto flex items-end gap-2 sm:gap-3">
+        <div className="pointer-events-auto flex items-end gap-1.5 sm:gap-2.5">
+          {/* FISHING ROD / MANCING BUTTON */}
+          <button
+            onClick={() => {
+              if (onFishingAction) onFishingAction();
+            }}
+            className="w-12 h-12 sm:w-13 sm:h-13 bg-gradient-to-br from-teal-800 to-cyan-900 hover:from-teal-700 hover:to-cyan-800 active:scale-90 border-2 border-cyan-400 text-white rounded-full flex flex-col items-center justify-center shadow-lg transition-transform text-[9px] font-bold"
+            title="Pakai Pancingan / Fish [G]"
+          >
+            <span className="text-sm">🎣</span>
+            <span className="text-[8px] text-cyan-200">MANCING</span>
+          </button>
+
           {/* INTERACT BUTTON */}
           <button
             onClick={() => onInteract()}
@@ -591,6 +608,7 @@ export const HUD: React.FC<HUDProps> = ({
             onDodge={onDodge}
             onSkill={onSkill}
             onInteract={onInteract}
+            onFishingAction={onFishingAction}
             onOpenInventory={onOpenInventory}
             onOpenQuests={onOpenQuests}
             onOpenMap={onOpenMap}

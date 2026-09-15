@@ -90,12 +90,16 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
       </div>
 
       {/* BOTTOM RANDOM GAMEPLAY TIP */}
-      <div className="max-w-lg w-full bg-slate-900/90 border border-amber-500/30 rounded-lg p-3.5 text-center shadow-lg">
-        <div className="flex items-center justify-center gap-1.5 text-amber-400 font-bold text-xs mb-1">
+      <div className="max-w-lg w-full bg-slate-900/90 border border-amber-500/30 rounded-lg p-3.5 text-center shadow-lg flex flex-col gap-2">
+        <div className="flex items-center justify-center gap-1.5 text-amber-400 font-bold text-xs">
           <Shield size={13} />
           <span>SURVIVAL GUIDELINES</span>
         </div>
         <p className="text-[11px] text-slate-300 leading-relaxed font-sans">{currentTip}</p>
+        <div className="pt-2 border-t border-slate-800 flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
+          <span>✨ Game Created by:</span>
+          <span className="text-amber-300 font-bold font-mono tracking-widest">Duo Lier (GR)</span>
+        </div>
       </div>
     </div>
   );

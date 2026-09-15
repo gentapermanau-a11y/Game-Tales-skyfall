@@ -1,26 +1,33 @@
 import React, { useState } from 'react';
-import { InventorySlot, EquipmentState, Item, ItemCategory } from '../types';
+import { InventorySlot, EquipmentState, Item, ItemCategory, FishingRodId } from '../types';
 import { X, Shield, Swords, Sparkles, Coins } from 'lucide-react';
 import { sound } from '../services/audio';
+import { FISHING_RODS } from '../game/fishingData';
 
 interface InventoryModalProps {
   inventory: InventorySlot[];
   equipment: EquipmentState;
   gold: number;
+  equippedRod?: FishingRodId;
   onClose: () => void;
   onEquip: (item: Item) => void;
   onUnequip: (slot: 'weapon' | 'armor' | 'accessory') => void;
   onUseConsumable: (item: Item) => void;
+  onEquipRod?: (rodId: FishingRodId) => void;
+  onEatFish?: (item: Item) => void;
 }
 
 export const InventoryModal: React.FC<InventoryModalProps> = ({
   inventory,
   equipment,
   gold,
+  equippedRod = 'rod_wooden',
   onClose,
   onEquip,
   onUnequip,
   onUseConsumable,
+  onEquipRod,
+  onEatFish,
 }) => {
   const [activeTab, setActiveTab] = useState<'all' | ItemCategory>('all');
   const [selectedItem, setSelectedItem] = useState<Item | null>(
@@ -46,12 +53,17 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({
   };
 
   const isEquipped = (item: Item) => {
+    if (item.category === 'fishing_rod') {
+      return equippedRod === item.id;
+    }
     return (
       equipment.weapon?.id === item.id ||
       equipment.armor?.id === item.id ||
       equipment.accessory?.id === item.id
     );
   };
+
+  const equippedRodData = FISHING_RODS[equippedRod] || FISHING_RODS.rod_wooden;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/65 backdrop-blur-xs font-pixel select-none animate-fade-in">
@@ -81,7 +93,7 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({
 
         {/* TABS */}
         <div className="flex flex-wrap gap-1 border-b border-slate-800 pb-2">
-          {(['all', 'weapon', 'armor', 'accessory', 'consumable', 'material', 'quest'] as const).map(
+          {(['all', 'weapon', 'armor', 'accessory', 'fishing_rod', 'fish', 'consumable', 'material', 'quest'] as const).map(
             (tab) => (
               <button
                 key={tab}
@@ -95,7 +107,7 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({
                     : 'bg-slate-900 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
                 }`}
               >
-                {tab}
+                {tab === 'fishing_rod' ? '🎣 Rods' : tab === 'fish' ? '🐟 Fish' : tab}
               </button>
             )
           )}
@@ -104,10 +116,10 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({
         {/* MAIN BODY: EQUIPMENT SLOTS (LEFT) + INVENTORY GRID (CENTER) + DETAILS (RIGHT) */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 flex-1">
           {/* EQUIPPED SLOTS */}
-          <div className="md:col-span-3 bg-slate-900/80 border border-slate-800 p-3 rounded flex flex-col gap-2.5">
+          <div className="md:col-span-3 bg-slate-900/80 border border-slate-800 p-3 rounded flex flex-col gap-2">
             <h3 className="text-[10px] sm:text-xs text-slate-400 font-bold flex items-center gap-1">
               <Swords size={12} className="text-amber-400" />
-              EQUIPPED
+              EQUIPPED GEAR
             </h3>
 
             {/* WEAPON */}
@@ -169,6 +181,29 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({
                 <div className="text-[9px] text-slate-400 uppercase">Accessory</div>
                 <div className="text-[10px] font-bold truncate">
                   {equipment.accessory ? equipment.accessory.name : 'Empty'}
+                </div>
+              </div>
+            </div>
+
+            {/* FISHING ROD SLOT */}
+            <div
+              onClick={() => {
+                const rodSlot = inventory.find((s) => s.item.id === equippedRod);
+                if (rodSlot) {
+                  sound.playButtonClick();
+                  setSelectedItem(rodSlot.item);
+                }
+              }}
+              className="p-2 rounded border border-amber-500/60 bg-amber-950/30 text-amber-200 cursor-pointer flex items-center gap-2 hover:bg-amber-950/50 transition-colors"
+            >
+              <span className="text-xl">{equippedRodData.icon || '🎣'}</span>
+              <div className="overflow-hidden">
+                <div className="text-[9px] text-amber-400 font-bold uppercase flex items-center gap-1">
+                  <span>Pancingan</span>
+                  <span className="text-[7px] bg-emerald-900 text-emerald-300 px-1 rounded">EQUIPPED</span>
+                </div>
+                <div className="text-[10px] font-bold truncate text-white">
+                  {equippedRodData.name}
                 </div>
               </div>
             </div>
@@ -301,6 +336,39 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({
                     className="flex-1 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded text-xs font-bold active:scale-95 transition-transform"
                   >
                     {isEquipped(selectedItem) ? 'Re-Equip' : 'Equip Gear'}
+                  </button>
+                )}
+
+                {/* FISHING ROD EQUIP BUTTON */}
+                {selectedItem.category === 'fishing_rod' && (
+                  <button
+                    onClick={() => {
+                      if (onEquipRod) {
+                        onEquipRod(selectedItem.id as FishingRodId);
+                      }
+                    }}
+                    disabled={isEquipped(selectedItem)}
+                    className={`flex-1 py-2 rounded text-xs font-bold transition-all ${
+                      isEquipped(selectedItem)
+                        ? 'bg-emerald-900/80 border border-emerald-500 text-emerald-200 cursor-default'
+                        : 'bg-amber-600 hover:bg-amber-500 text-white shadow-lg active:scale-95'
+                    }`}
+                  >
+                    {isEquipped(selectedItem) ? '✓ Sedang Dipakai (Equipped)' : '🎣 Pakai Pancingan Ini'}
+                  </button>
+                )}
+
+                {/* FISH CONSUME BUTTON */}
+                {selectedItem.category === 'fish' && (
+                  <button
+                    onClick={() => {
+                      if (onEatFish) {
+                        onEatFish(selectedItem);
+                      }
+                    }}
+                    className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-bold active:scale-95 transition-transform shadow-lg"
+                  >
+                    🍴 Santap Ikan (Aktifkan Buff)
                   </button>
                 )}
 

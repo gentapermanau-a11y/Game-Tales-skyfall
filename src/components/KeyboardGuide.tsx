@@ -8,6 +8,7 @@ interface KeyboardGuideProps {
   onDodge?: () => void;
   onSkill?: () => void;
   onInteract?: () => void;
+  onFishingAction?: () => void;
   onOpenInventory?: () => void;
   onOpenQuests?: () => void;
   onOpenMap?: () => void;
@@ -21,6 +22,7 @@ export const KeyboardGuide: React.FC<KeyboardGuideProps> = ({
   onDodge,
   onSkill,
   onInteract,
+  onFishingAction,
   onOpenInventory,
   onOpenQuests,
   onOpenMap,
@@ -140,6 +142,17 @@ export const KeyboardGuide: React.FC<KeyboardGuideProps> = ({
             E
           </kbd>
           <span className={prompt ? 'text-amber-300 font-bold' : 'text-slate-400'}>Act</span>
+        </button>
+
+        <button
+          onClick={onFishingAction}
+          className={`flex items-center gap-0.5 ${interactiveClass}`}
+          title="[G] to use Fishing Rod / Fish"
+        >
+          <kbd className="px-1 py-0 bg-slate-900 border border-cyan-500/80 text-cyan-300 font-mono font-bold rounded-[2px] text-[7px] leading-tight">
+            G
+          </kbd>
+          <span className="text-cyan-300">Fish</span>
         </button>
 
         <span className="text-slate-700 hidden sm:inline">|</span>

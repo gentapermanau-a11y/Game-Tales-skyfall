@@ -201,9 +201,13 @@ export const NewGameCinematic: React.FC<NewGameCinematicProps> = ({ onComplete }
 
       {/* BOTTOM CINEMATIC LETTERBOX BAR */}
       <div className="z-10 w-full h-16 sm:h-20 bg-black flex items-center justify-between px-6 border-t border-amber-500/20">
-        <div className="text-xs text-slate-400 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-          <span>Aeron is descending to the mortal realm...</span>
+        <div className="text-xs text-slate-400 flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+            <span className="hidden sm:inline">Aeron is descending to the mortal realm...</span>
+          </div>
+          <span className="text-slate-600 hidden sm:inline">•</span>
+          <span className="text-[11px] text-amber-300/90 font-bold">Created by Duo Lier (GR)</span>
         </div>
 
         {/* SKIP BUTTON */}

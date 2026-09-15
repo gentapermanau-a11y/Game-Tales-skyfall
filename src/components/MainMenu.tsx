@@ -34,6 +34,7 @@ interface MainMenuProps {
   onUpdateSettings: (newSettings: GameSettings) => void;
   onNewGame: () => void;
   onContinue: () => void;
+  onUpdateName?: (name: string) => void;
 }
 
 export const MainMenu: React.FC<MainMenuProps> = ({
@@ -45,6 +46,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   onUpdateSettings,
   onNewGame,
   onContinue,
+  onUpdateName,
 }) => {
   // Screen views
   const [activeScreen, setActiveScreen] = useState<
@@ -215,6 +217,15 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             <span>A JOURNEY BEYOND THE SKY</span>
             <span className="w-8 h-0.5 bg-sky-400/80 rounded" />
           </p>
+
+          {/* CREATOR BADGE */}
+          <div className="flex items-center gap-2 mt-1">
+            <div className="px-3.5 py-1 rounded-full bg-gradient-to-r from-amber-500/25 via-amber-400/20 to-amber-500/25 border-2 border-amber-400/80 text-amber-300 font-bold text-xs flex items-center gap-2 shadow-[0_0_18px_rgba(245,158,11,0.35)]">
+              <span className="text-sm">👑</span>
+              <span className="text-slate-200 font-medium">Created by:</span>
+              <span className="text-amber-200 uppercase font-mono tracking-widest font-black text-sm drop-shadow">Duo Lier (GR)</span>
+            </div>
+          </div>
         </div>
 
         {/* MENU BUTTON LIST */}
@@ -286,12 +297,20 @@ export const MainMenu: React.FC<MainMenuProps> = ({
       </div>
 
       {/* 4. FOOTER */}
-      <div className="z-10 w-full px-6 py-3 border-t border-slate-800/80 bg-slate-950/70 backdrop-blur-xs flex flex-wrap items-center justify-between text-[10px] text-slate-500 pointer-events-auto">
+      <div className="z-20 w-full px-6 py-3 border-t border-slate-800/80 bg-slate-950/95 backdrop-blur-md flex flex-wrap items-center justify-between text-[11px] text-slate-400 pointer-events-auto gap-3 shrink-0">
         <div className="flex items-center gap-2">
-          <Shield size={12} className="text-amber-400" />
-          <span>TALES OF THE SKYFALL • 2D ACTION RPG</span>
+          <Shield size={14} className="text-amber-400" />
+          <span className="font-semibold text-slate-300 hidden sm:inline">TALES OF THE SKYFALL • 2D ACTION RPG</span>
         </div>
-        <div>PRESS [H] FOR KEYBOARD GUIDE • TARGET 60 FPS</div>
+
+        {/* Center Credit */}
+        <div id="mainmenu-creator-credit" className="flex items-center gap-2 px-4 py-1.5 bg-gradient-to-r from-amber-500/20 via-amber-400/30 to-amber-500/20 border-2 border-amber-400 rounded-full text-amber-300 font-bold text-xs tracking-wider shadow-[0_0_16px_rgba(245,158,11,0.45)]">
+          <span className="text-sm">✨</span>
+          <span className="text-slate-200">Created by:</span>
+          <span className="text-amber-200 uppercase font-mono tracking-widest font-black text-sm">Duo Lier (GR)</span>
+        </div>
+
+        <div className="text-slate-400 font-mono text-[10px]">PRESS [H] FOR KEYBOARD GUIDE • TARGET 60 FPS</div>
       </div>
 
       {/* 5. MODALS & TRANSITIONS */}
@@ -328,6 +347,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
           stats={saveData?.playerStats || stats}
           equipment={saveData?.equipment || equipment}
           onClose={() => setActiveScreen('main')}
+          onUpdateName={onUpdateName}
         />
       )}
 

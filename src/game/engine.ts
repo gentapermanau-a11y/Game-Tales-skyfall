@@ -130,6 +130,7 @@ export interface EngineCallbacks {
   onFishCaught?: (fish: FishSpecies, size: number, weight: number, isNewRecord: boolean) => void;
   onFishCollectionUpdate?: (collection: Record<string, FishCatchRecord>) => void;
   onFishBuffsUpdate?: (buffs: ActiveFishBuff[]) => void;
+  onEquippedRodUpdate?: (rodId: FishingRodId) => void;
 }
 
 export class GameEngine {
@@ -719,8 +720,8 @@ export class GameEngine {
         closestDist = dist;
         if (obj.type === 'fishing_spot') {
           bestPrompt = {
-            key: 'E',
-            action: 'START FISHING',
+            key: 'E / G',
+            action: 'MEMANCING IKAN',
             targetName: obj.spotName || 'Quiet Waters',
             icon: '🎣',
           };
@@ -794,6 +795,19 @@ export class GameEngine {
             icon: '✨',
           };
         }
+      }
+    }
+
+    // 3. If no other object or NPC is within range, check proximity to any water pond/river
+    if (!bestPrompt) {
+      const waterNear = this.getNearbyFishingSpotOrWater();
+      if (waterNear) {
+        bestPrompt = {
+          key: 'E / G',
+          action: 'MEMANCING IKAN',
+          targetName: waterNear.spotName,
+          icon: '🎣',
+        };
       }
     }
 
@@ -1152,6 +1166,13 @@ export class GameEngine {
         }
       }
     }
+
+    // 3. Proximity to any water pond or fishing spot
+    const waterNear = this.getNearbyFishingSpotOrWater();
+    if (waterNear) {
+      this.startFishing(waterNear.spotObj || waterNear);
+      return;
+    }
   }
 
   public executePortalTravel(targetArea: AreaId, targetSpawn?: { x: number; y: number }) {
@@ -1177,14 +1198,137 @@ export class GameEngine {
   // FISHING ENGINE METHODS
   // ==========================================
 
-  public startFishing(spot?: InteractiveObject) {
-    this.currentFishingSpotObj = spot || this.objects.find((o) => o.type === 'fishing_spot') || null;
+  public getNearbyFishingSpotOrWater(): { spotName: string; spotObj?: InteractiveObject; waterX: number; waterY: number } | null {
+    // 1. Check direct fishing spot interactive object in generous range (90px)
+    let closestSpot: InteractiveObject | null = null;
+    let closestDist = 90;
+    for (const obj of this.objects) {
+      if (obj.type === 'fishing_spot') {
+        const cx = obj.x + (obj.width || 32) / 2;
+        const cy = obj.y + (obj.height || 32) / 2;
+        const dist = Math.hypot(cx - this.px, cy - this.py);
+        if (dist < closestDist) {
+          closestDist = dist;
+          closestSpot = obj;
+        }
+      }
+    }
 
-    // Check if player has any rod in inventory
+    if (closestSpot) {
+      return {
+        spotName: closestSpot.spotName || 'Quiet Waters',
+        spotObj: closestSpot,
+        waterX: closestSpot.x,
+        waterY: closestSpot.y,
+      };
+    }
+
+    // 2. Check nearby water tiles (tile === 3) in a 2.5 tile radius around player
+    if (this.currentMap && this.currentMap.tiles) {
+      const tileSize = this.currentMap.tileSize || 32;
+      const playerTileX = Math.floor(this.px / tileSize);
+      const playerTileY = Math.floor(this.py / tileSize);
+      let nearestWaterTile: { x: number; y: number; dist: number } | null = null;
+
+      for (let dy = -3; dy <= 3; dy++) {
+        for (let dx = -3; dx <= 3; dx++) {
+          const tx = playerTileX + dx;
+          const ty = playerTileY + dy;
+          if (
+            ty >= 0 &&
+            ty < this.currentMap.tiles.length &&
+            tx >= 0 &&
+            tx < this.currentMap.tiles[0].length
+          ) {
+            if (this.currentMap.tiles[ty][tx] === 3) {
+              const tileCenterX = tx * tileSize + tileSize / 2;
+              const tileCenterY = ty * tileSize + tileSize / 2;
+              const dist = Math.hypot(tileCenterX - this.px, tileCenterY - this.py);
+              if (dist < 85 && (!nearestWaterTile || dist < nearestWaterTile.dist)) {
+                nearestWaterTile = { x: tileCenterX, y: tileCenterY, dist };
+              }
+            }
+          }
+        }
+      }
+
+      if (nearestWaterTile) {
+        const areaName = AREA_NAMES[this.currentAreaId] || 'Lake';
+        return {
+          spotName: `${areaName} Fishing Pond`,
+          waterX: nearestWaterTile.x,
+          waterY: nearestWaterTile.y,
+        };
+      }
+    }
+
+    return null;
+  }
+
+  public startFishing(spotInput?: InteractiveObject | { spotName: string; spotObj?: InteractiveObject; waterX?: number; waterY?: number }) {
+    if (spotInput && 'type' in spotInput && spotInput.type === 'fishing_spot') {
+      this.currentFishingSpotObj = spotInput;
+    } else if (spotInput && 'spotObj' in spotInput && spotInput.spotObj) {
+      this.currentFishingSpotObj = spotInput.spotObj;
+    } else if (spotInput && 'waterX' in spotInput && spotInput.waterX !== undefined && spotInput.waterY !== undefined) {
+      this.currentFishingSpotObj = {
+        id: `water_spot_${this.currentAreaId}`,
+        type: 'fishing_spot',
+        spotName: spotInput.spotName || 'Quiet Waters',
+        x: spotInput.waterX - 16,
+        y: spotInput.waterY - 16,
+        width: 32,
+        height: 32,
+        state: 'active',
+      };
+    } else {
+      const waterNear = this.getNearbyFishingSpotOrWater();
+      if (waterNear) {
+        if (waterNear.spotObj) {
+          this.currentFishingSpotObj = waterNear.spotObj;
+        } else {
+          this.currentFishingSpotObj = {
+            id: `water_spot_${this.currentAreaId}`,
+            type: 'fishing_spot',
+            spotName: waterNear.spotName,
+            x: waterNear.waterX - 16,
+            y: waterNear.waterY - 16,
+            width: 32,
+            height: 32,
+            state: 'active',
+          };
+        }
+      } else {
+        this.currentFishingSpotObj = this.objects.find((o) => o.type === 'fishing_spot') || null;
+      }
+    }
+
+    // Ensure player always has a fishing rod ready
     const hasRod = this.inventory.some((s) => s.item.category === 'fishing_rod');
-    if (!hasRod && !this.equippedRod) {
-      this.callbacks.onMessage('You need a Fishing Rod to fish! Talk to Fisherman Finn in Skyfall Village.');
-      return;
+    if (!hasRod) {
+      this.inventory.push({ item: ITEMS.rod_wooden, quantity: 1 });
+      this.equippedRod = 'rod_wooden';
+      this.callbacks.onInventoryUpdate([...this.inventory]);
+      if (this.callbacks.onEquippedRodUpdate) {
+        this.callbacks.onEquippedRodUpdate('rod_wooden');
+      }
+    } else if (!this.equippedRod) {
+      const firstRod = this.inventory.find((s) => s.item.category === 'fishing_rod');
+      this.equippedRod = (firstRod?.item.id as FishingRodId) || 'rod_wooden';
+      if (this.callbacks.onEquippedRodUpdate) {
+        this.callbacks.onEquippedRodUpdate(this.equippedRod);
+      }
+    }
+
+    // Ensure player has basic bait if empty
+    const hasBait = this.inventory.some((s) => s.item.category === 'bait');
+    if (!hasBait) {
+      this.inventory.push({ item: ITEMS.bait_basic, quantity: 10 });
+      this.equippedBait = 'bait_basic';
+      this.callbacks.onInventoryUpdate([...this.inventory]);
+    } else if (!this.equippedBait) {
+      const firstBait = this.inventory.find((s) => s.item.category === 'bait');
+      this.equippedBait = (firstBait?.item.id as FishingBaitId) || 'bait_basic';
     }
 
     const currentRod = FISHING_RODS[this.equippedRod] || FISHING_RODS.rod_wooden;
@@ -1199,7 +1343,7 @@ export class GameEngine {
       phase: 'idle',
       isAutoFishing: false,
       spotId: this.currentFishingSpotObj ? this.currentFishingSpotObj.id : null,
-      spotName: this.currentFishingSpotObj?.spotName || 'Quiet Waters',
+      spotName: this.currentFishingSpotObj?.spotName || `${AREA_NAMES[this.currentAreaId] || 'Lake'} Waters`,
       equippedRod: this.equippedRod,
       equippedBait: this.equippedBait,
       baitCount,
@@ -1219,6 +1363,70 @@ export class GameEngine {
     sound.playButtonClick();
     if (this.callbacks.onFishingUpdate) {
       this.callbacks.onFishingUpdate({ ...this.fishingState });
+    }
+  }
+
+  public setEquippedRod(rodId: FishingRodId) {
+    this.equippedRod = rodId;
+    const rod = FISHING_RODS[rodId];
+    if (this.fishingState) {
+      this.fishingState.equippedRod = rodId;
+      if (rod) {
+        this.fishingState.barSize = Math.round(24 * rod.barSizeMultiplier);
+      }
+      if (this.callbacks.onFishingUpdate) {
+        this.callbacks.onFishingUpdate({ ...this.fishingState });
+      }
+    }
+    if (this.callbacks.onEquippedRodUpdate) {
+      this.callbacks.onEquippedRodUpdate(rodId);
+    }
+    sound.playButtonClick();
+    this.callbacks.onMessage(`🎣 Equipped ${rod ? rod.name : 'Fishing Rod'}!`);
+    this.autoSave();
+  }
+
+  public setEquippedBait(baitId: FishingBaitId | null) {
+    this.equippedBait = baitId;
+    if (this.fishingState) {
+      this.fishingState.equippedBait = baitId;
+      const baitSlot = baitId ? this.inventory.find((s) => s.item.id === baitId) : null;
+      this.fishingState.baitCount = baitSlot ? baitSlot.quantity : 0;
+      if (this.callbacks.onFishingUpdate) {
+        this.callbacks.onFishingUpdate({ ...this.fishingState });
+      }
+    }
+    const bait = baitId ? FISHING_BAITS[baitId] : null;
+    sound.playButtonClick();
+    if (bait) {
+      this.callbacks.onMessage(`🪱 Attached ${bait.name}!`);
+    } else {
+      this.callbacks.onMessage(`Detached bait.`);
+    }
+  }
+
+  public triggerFishingRodAction() {
+    // 1. If currently in fishing mode, toggle or cancel or cast
+    if (this.fishingState) {
+      if (this.fishingState.phase === 'idle' || this.fishingState.phase === 'caught' || this.fishingState.phase === 'escaped') {
+        this.castLine();
+      } else if (this.fishingState.phase === 'bite') {
+        this.hookFish();
+      } else if (this.fishingState.phase === 'reeling') {
+        this.isReelingHeld = !this.isReelingHeld;
+      }
+      return;
+    }
+
+    // 2. Check if near any water or fishing spot
+    const waterNear = this.getNearbyFishingSpotOrWater();
+    if (waterNear) {
+      this.startFishing(waterNear);
+    } else {
+      // Wield rod and show guidance
+      const rod = FISHING_RODS[this.equippedRod] || FISHING_RODS.rod_wooden;
+      sound.playCast();
+      this.callbacks.onMessage(`🎣 Mempersiapkan ${rod.name}! Dekati kolam atau tepi air untuk memancing.`);
     }
   }
 
@@ -1296,30 +1504,6 @@ export class GameEngine {
     }
   }
 
-  public setEquippedBait(baitId: FishingBaitId | null) {
-    this.equippedBait = baitId;
-    if (this.fishingState) {
-      this.fishingState.equippedBait = baitId;
-      const baitSlot = baitId ? this.inventory.find((s) => s.item.id === baitId) : null;
-      this.fishingState.baitCount = baitSlot ? baitSlot.quantity : 0;
-      if (this.callbacks.onFishingUpdate) {
-        this.callbacks.onFishingUpdate({ ...this.fishingState });
-      }
-    }
-  }
-
-  public setEquippedRod(rodId: FishingRodId) {
-    this.equippedRod = rodId;
-    if (this.fishingState) {
-      this.fishingState.equippedRod = rodId;
-      const rod = FISHING_RODS[rodId] || FISHING_RODS.rod_wooden;
-      this.fishingState.barSize = Math.round(24 * rod.barSizeMultiplier);
-      if (this.callbacks.onFishingUpdate) {
-        this.callbacks.onFishingUpdate({ ...this.fishingState });
-      }
-    }
-  }
-
   public cancelFishing() {
     this.fishingState = null;
     this.isReelingHeld = false;
@@ -1333,7 +1517,9 @@ export class GameEngine {
 
     // WAITING PHASE
     if (this.fishingState.phase === 'waiting') {
-      this.fishingState.biteTimer -= dt;
+      // Auto-fishing accelerates bite time so the player catches fish fast & seamlessly
+      const speed = this.fishingState.isAutoFishing ? dt * 2.2 : dt;
+      this.fishingState.biteTimer -= speed;
       if (this.fishingState.biteTimer <= 0) {
         this.fishingState.phase = 'bite';
         this.fishingState.biteTimer = 1.6; // 1.6s bite window
@@ -1343,13 +1529,9 @@ export class GameEngine {
           this.spawnSparks(this.currentFishingSpotObj.x, this.currentFishingSpotObj.y, '#38bdf8', 12);
         }
 
-        // If Auto-fishing is enabled, auto hook after 0.4s
+        // If Auto-fishing is enabled, instantly hook the fish with 100% success rate
         if (this.fishingState.isAutoFishing) {
-          setTimeout(() => {
-            if (this.fishingState && this.fishingState.phase === 'bite') {
-              this.hookFish();
-            }
-          }, 400);
+          this.hookFish();
         }
       }
       if (this.callbacks.onFishingUpdate) {
@@ -1360,6 +1542,10 @@ export class GameEngine {
 
     // BITE PHASE
     if (this.fishingState.phase === 'bite') {
+      if (this.fishingState.isAutoFishing) {
+        this.hookFish();
+        return;
+      }
       this.fishingState.biteTimer -= dt;
       if (this.fishingState.biteTimer <= 0) {
         // Missed bite window
@@ -1377,21 +1563,34 @@ export class GameEngine {
       const rod = FISHING_RODS[this.fishingState.equippedRod] || FISHING_RODS.rod_wooden;
       const fish = this.fishingState.targetFish || ALL_FISH[0];
 
-      // Move player green capture bar (Holding rises, releasing falls)
+      // Auto-fishing bot logic: GUARANTEED WIN (AUTO MENANG 100%)
+      if (this.fishingState.isAutoFishing) {
+        // Bar locks onto the fish seamlessly
+        const targetBar = this.fishingState.fishPosition - this.fishingState.barSize / 2;
+        this.fishingState.barPosition = Math.max(0, Math.min(100 - this.fishingState.barSize, targetBar));
+
+        // Line tension is safely locked at 0 (never breaks)
+        this.fishingState.fishTension = 0;
+
+        // Reel progress charges up quickly and wins 100% of the time
+        this.fishingState.reelProgress = Math.min(100, this.fishingState.reelProgress + (40 + rod.power * 8) * dt);
+
+        if (this.fishingState.reelProgress >= 100) {
+          this.catchFish(fish);
+          return;
+        }
+
+        if (this.callbacks.onFishingUpdate) {
+          this.callbacks.onFishingUpdate({ ...this.fishingState });
+        }
+        return;
+      }
+
+      // Manual Reeling Mode
       if (this.isReelingHeld) {
         this.fishingState.barPosition = Math.min(100 - this.fishingState.barSize, this.fishingState.barPosition + 65 * dt);
       } else {
         this.fishingState.barPosition = Math.max(0, this.fishingState.barPosition - 55 * dt);
-      }
-
-      // Auto-fishing bot logic helper
-      if (this.fishingState.isAutoFishing) {
-        const targetBar = this.fishingState.fishPosition - this.fishingState.barSize / 2;
-        if (this.fishingState.barPosition < targetBar) {
-          this.fishingState.barPosition = Math.min(100 - this.fishingState.barSize, this.fishingState.barPosition + 70 * dt);
-        } else {
-          this.fishingState.barPosition = Math.max(0, this.fishingState.barPosition - 50 * dt);
-        }
       }
 
       // Fish vertical swimming oscillation
@@ -1414,7 +1613,7 @@ export class GameEngine {
         this.fishingState.fishTension = Math.min(100, this.fishingState.fishTension + 22 * dt);
       }
 
-      // Line snapped condition
+      // Line snapped condition (Manual mode only)
       if (this.fishingState.fishTension >= 100 || this.fishingState.reelProgress <= 0) {
         this.fishingState.phase = 'escaped';
         sound.playPortalLocked();
@@ -1578,6 +1777,16 @@ export class GameEngine {
       }
     }
     return baits;
+  }
+
+  public getAvailableRods(): FishingRodId[] {
+    const rods: FishingRodId[] = ['rod_wooden'];
+    for (const slot of this.inventory) {
+      if (slot.item.category === 'fishing_rod' && !rods.includes(slot.item.id as FishingRodId)) {
+        rods.push(slot.item.id as FishingRodId);
+      }
+    }
+    return rods;
   }
 
   // --- ENEMIES & AI ---

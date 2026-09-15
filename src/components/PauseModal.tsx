@@ -208,6 +208,11 @@ export const PauseModal: React.FC<PauseModalProps> = ({
               <LogOut size={14} />
               <span>EXIT TO MAIN MENU</span>
             </button>
+
+            <div className="pt-2 text-center text-[10px] text-slate-400 font-mono flex items-center justify-center gap-1">
+              <span>Game by</span>
+              <span className="text-amber-300 font-bold">Duo Lier (GR)</span>
+            </div>
           </div>
         </div>
       </div>
